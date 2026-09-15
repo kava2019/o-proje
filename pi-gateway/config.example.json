@@ -1,0 +1,8 @@
+{
+  "pc_host": "192.168.1.50",
+  "pc_port": 8000,
+  "network_id": 1,
+  "rf_channel": 76,
+  "cmd_timeout_ms": 500,
+  "cmd_retries": 2
+}

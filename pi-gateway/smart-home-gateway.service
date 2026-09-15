@@ -1,0 +1,15 @@
+[Unit]
+Description=Akilli Ev Pi Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kava
+WorkingDirectory=/home/kava/o-proje/pi-gateway
+ExecStart=/home/kava/o-proje/pi-gateway/.venv/bin/python -m gateway.main
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

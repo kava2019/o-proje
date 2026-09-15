@@ -1,0 +1,3 @@
+websockets
+circuitpython-nrf24l01
+adafruit-blinka
