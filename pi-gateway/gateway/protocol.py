@@ -80,6 +80,27 @@ def device_id_from_hex(text: str) -> bytes:
     return raw
 
 
+# pc-server tarafı device_type/state'i "PLUG"/"LIGHT" ve "on"/"off" string'leriyle
+# konuşuyor (bkz. pc-server/app/models.py); radyo paketindeki numerik
+# sabitlerle bu string'ler arasındaki çeviri burada, tek yerde yapılır.
+
+
+def device_type_to_str(value: int) -> str:
+    return "LIGHT" if value == DEVICE_LIGHT else "PLUG"
+
+
+def device_type_from_str(value: str) -> int:
+    return DEVICE_LIGHT if value == "LIGHT" else DEVICE_PLUG
+
+
+def state_to_str(value: int) -> str:
+    return "on" if value == STATE_ON else "off"
+
+
+def state_from_str(value: str) -> int:
+    return STATE_ON if value == "on" else STATE_OFF
+
+
 def _pack_manual(p: RadioPacket) -> bytes:
     """struct modülünü kullanmadan, elle byte dizen bağımsız referans.
 
