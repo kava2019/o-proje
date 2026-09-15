@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Akıllı Ev</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f2f2f2; color: #111; }
+  header { background: #222; color: #fff; padding: 12px 16px; }
+  header h1 { font-size: 18px; margin: 0; }
+  #banner { display: none; background: #b02a2a; color: #fff; padding: 8px 16px; font-size: 14px; }
+  #banner.show { display: block; }
+  #toast { display: none; background: #a15c00; color: #fff; padding: 8px 16px; font-size: 14px; }
+  #toast.show { display: block; }
+  main { padding: 16px; max-width: 640px; margin: 0 auto; }
+  .device { background: #fff; border-radius: 6px; padding: 12px 14px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .device.offline { opacity: 0.55; }
+  .device .name { flex: 1; }
+  .device .name input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
+                         padding: 4px 6px; font-size: 14px; }
+  .device .type { font-size: 12px; color: #666; width: 60px; }
+  .device .status { font-size: 13px; width: 90px; }
+  .status.on { color: #1a7f1a; font-weight: 600; }
+  .status.off { color: #555; }
+  .status.offline { color: #b02a2a; }
+  .device button { border: none; border-radius: 4px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+  .device button.on { background: #1a7f1a; color: #fff; }
+  .device button.off { background: #999; color: #fff; }
+  .device button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #empty { color: #666; padding: 8px; }
+</style>
+</head>
+<body>
+<header><h1>Akıllı Ev</h1></header>
+<div id="banner"></div>
+<div id="toast"></div>
+<main>
+  <div id="empty">Yükleniyor…</div>
+  <div id="list"></div>
+</main>
+
+<script>
+let devices = {};
+let gatewayConnected = false;
+let radioOk = null;
+let ws = null;
+let reconnectDelay = 1000;
+
+function wsUrl() {
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  return proto + "//" + location.host + "/ws/ui";
+}
+
+function connect() {
+  ws = new WebSocket(wsUrl());
+  ws.onopen = () => { reconnectDelay = 1000; };
+  ws.onmessage = (ev) => handleMessage(JSON.parse(ev.data));
+  ws.onclose = scheduleReconnect;
+  ws.onerror = () => ws.close();
+}
+
+function scheduleReconnect() {
+  setTimeout(connect, reconnectDelay);
+  reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+}
+
+function handleMessage(msg) {
+  if (msg.type === "snapshot") {
+    devices = {};
+    for (const d of msg.devices) devices[d.device_id] = d;
+    gatewayConnected = msg.gateway_connected;
+    radioOk = msg.radio_ok;
+  } else if (msg.type === "device_update") {
+    devices[msg.device.device_id] = msg.device;
+  } else if (msg.type === "gateway_status") {
+    gatewayConnected = msg.connected;
+    radioOk = msg.radio_ok;
+    if (!gatewayConnected) {
+      for (const id in devices) devices[id].online = false;
+    }
+  }
+  render();
+}
+
+function showToast(text) {
+  const el = document.getElementById("toast");
+  el.textContent = text;
+  el.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => el.classList.remove("show"), 4000);
+}
+
+function statusOf(d) {
+  if (!d.online) return { text: "çevrimdışı", cls: "offline" };
+  if (d.state === "on") return { text: "açık", cls: "on" };
+  if (d.state === "off") return { text: "kapalı", cls: "off" };
+  return { text: "bilinmiyor", cls: "off" };
+}
+
+async function toggle(deviceId, currentState) {
+  const nextState = currentState === "on" ? "off" : "on";
+  try {
+    const res = await fetch(`/api/devices/${deviceId}/command`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: nextState }),
+    });
+    if (res.status === 503) {
+      showToast("Gateway bağlı değil, komut gönderilemedi.");
+    } else if (!res.ok) {
+      showToast("Komut gönderilemedi (" + res.status + ").");
+    }
+  } catch (e) {
+    showToast("Komut gönderilemedi: bağlantı hatası.");
+  }
+}
+
+async function rename(deviceId, name) {
+  try {
+    const res = await fetch(`/api/devices/${deviceId}/name`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) showToast("İsim güncellenemedi (" + res.status + ").");
+  } catch (e) {
+    showToast("İsim güncellenemedi: bağlantı hatası.");
+  }
+}
+
+function render() {
+  const banner = document.getElementById("banner");
+  if (!gatewayConnected) {
+    banner.textContent = "Gateway bağlı değil";
+    banner.classList.add("show");
+  } else if (radioOk === false) {
+    banner.textContent = "Gateway bağlı, radyo yok";
+    banner.classList.add("show");
+  } else {
+    banner.classList.remove("show");
+  }
+
+  const list = document.getElementById("list");
+  const empty = document.getElementById("empty");
+  const ids = Object.keys(devices);
+  empty.style.display = ids.length ? "none" : "block";
+  empty.textContent = "Henüz kayıtlı cihaz yok.";
+
+  list.innerHTML = "";
+  for (const id of ids.sort()) {
+    const d = devices[id];
+    const st = statusOf(d);
+
+    const row = document.createElement("div");
+    row.className = "device" + (d.online ? "" : " offline");
+
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "name";
+    const nameInput = document.createElement("input");
+    nameInput.value = d.name;
+    nameInput.addEventListener("change", () => rename(id, nameInput.value));
+    nameWrap.appendChild(nameInput);
+
+    const type = document.createElement("div");
+    type.className = "type";
+    type.textContent = d.device_type || "?";
+
+    const status = document.createElement("div");
+    status.className = "status " + st.cls;
+    status.textContent = st.text;
+
+    const btn = document.createElement("button");
+    const isOn = d.state === "on";
+    btn.className = isOn ? "on" : "off";
+    btn.textContent = isOn ? "Kapat" : "Aç";
+    btn.disabled = !gatewayConnected;
+    btn.addEventListener("click", () => toggle(id, d.state));
+
+    row.append(nameWrap, type, status, btn);
+    list.appendChild(row);
+  }
+}
+
+connect();
+</script>
+</body>
+</html>
