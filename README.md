@@ -17,12 +17,15 @@ Bir terminalde pc-server:
 cd pc-server
 python -m venv .venv                                       # ilk seferde
 ./.venv/Scripts/python -m pip install -r requirements.txt   # ilk seferde
-./.venv/Scripts/python -m uvicorn app.main:app --port 8000
+./.venv/Scripts/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 `PYTHONPATH` ayarlamana gerek yok: `python -m uvicorn ...` çalışma
 dizinini (`pc-server/`) zaten otomatik olarak `sys.path`'e ekliyor, bu
 yüzden `app.main:app` içe aktarımı ek ayar gerektirmeden çalışıyor.
+
+`--host 0.0.0.0` şart: onsuz uvicorn varsayılan olarak sadece
+`127.0.0.1`'i dinler ve gerçek `pi-gateway` (ayrı bir Pi'den) bağlanamaz.
 
 İkinci bir terminalde pi-gateway:
 
