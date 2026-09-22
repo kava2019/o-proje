@@ -6,7 +6,6 @@
 // sadece PC tarafinda tutulur.
 #include <SPI.h>
 #include <RF24.h>
-#include <WiFi.h>
 #include "protocol.h"
 
 // ==================== KURULUM AYARLARI ====================
@@ -96,7 +95,9 @@ void setup() {
   digitalWrite(RELAY_PIN, !RELAY_ACTIVE_LEVEL);
   pinMode(RELAY_PIN, OUTPUT);
 
-  WiFi.macAddress(myDeviceId); // WiFi'yi hic baglamadan, sadece fabrika MAC'ini okumak icin
+  // WiFi kullanmadan fabrika MAC'ini efuse'tan oku
+  uint64_t efuse = ESP.getEfuseMac();
+  for (int i = 0; i < 6; i++) myDeviceId[i] = (efuse >> (8 * i)) & 0xFF;
   Serial.printf("[BOOT] device_id=%02X%02X%02X%02X%02X%02X device_type=%d network_id=%d rf_channel=%d\n",
                 myDeviceId[0], myDeviceId[1], myDeviceId[2],
                 myDeviceId[3], myDeviceId[4], myDeviceId[5],
