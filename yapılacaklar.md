@@ -1,21 +1,10 @@
-# Akıllı Ev - Proje Durumu
+Onaylıyorum, değişiklikleri yap. Ek olarak:
 
-## Faz 1 - esp32-node (bitti)
+Her iki tarafta da başlangıçta bu ayarları LOGLA — payload boyutu, CRC,
+veri hızı, adres genişliği, auto-ack, kanal. Pi başlarken bunları INFO
+olarak bassın, ESP de boot'ta Serial'a yazsın.
 
-- `esp32-node.ino` ilk kez derlendi ve yüklendi.
-- `radioPacketSelfTest` PASS.
-- `device_id`, MAC ile eşleşti (`8C94DF8CAC38`).
-- WiFi kütüphanesi kaldırıldı, MAC artık `ESP.getEfuseMac()` ile okunuyor.
+Böylece bir daha ayar uyuşmazlığı olursa iki logu yan yana koyup 10
+saniyede görürüm, tekrar kütüphane kaynak kodu okumam gerekmez.
 
-## Faz 2 - pi-gateway (bitti)
-
-- Gateway gerçek Pi'de çalıştı, PC'ye bağlandı.
-- Tarayıcıda "Gateway bağlı, radyo yok" göründü.
-- Pi'de SPI açıldı.
-- Kod, git clone ile deploy key üzerinden indirildi.
-- Windows'ta hotspot ağı Public geliyor; firewall kuralı Private için
-  yazıldığından ağı Private'a çevirmek gerekti.
-
-## Faz 3 - nRF24 kablolama (sırada)
-
-- Dişi-dişi jumper kablo bekleniyor.
+Sonra commit ve push et.

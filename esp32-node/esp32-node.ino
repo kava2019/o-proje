@@ -107,11 +107,31 @@ void setup() {
     Serial.println("[RADIO] nRF24 baslatilamadi (kablolamayi kontrol et), 1sn sonra tekrar denenecek");
     delay(1000);
   }
+
+  // RF24 (TMRh20) ve Pi tarafindaki circuitpython-nrf24l01 kutuphanesinin
+  // varsayilanlari birbirinden farkli (ornegin bu kutuphane dinamik payload'u
+  // varsayilan KAPALI tutar, Pi tarafi varsayilan ACIK tutar). Varsayilana
+  // guvenmek iki tarafin birbirini hic duymamasina yol acti - bu yuzden her
+  // ayar burada ACIKCA set ediliyor, pi-gateway/gateway/radio.py'deki
+  // karsiligiyla birebir eslesmeli.
+  radio.setAddressWidth(5);
   radio.setChannel(RF_CHANNEL);
+  radio.disableDynamicPayloads();
+  radio.setPayloadSize(12);
+  radio.setCRCLength(RF24_CRC_16);
+  radio.setDataRate(RF24_1MBPS);
+  radio.setAutoAck(true);
+
   radio.openWritingPipe(COMMON_ADDRESS);
   radio.openReadingPipe(1, COMMON_ADDRESS);
   radio.startListening();
   Serial.println("[RADIO] nRF24 hazir, dinleme modunda");
+  // getAutoAck()/getDynamicPayloads() gibi genel getter'lar RF24 kutuphanesinde
+  // yok; az once ACIKCA set ettigimiz degerleri (auto_ack=1, dinamik_payload=0)
+  // dogrudan yaziyoruz, tahmin/varsayima dayanan bir okuma yapmiyoruz.
+  Serial.printf(
+      "[RADIO] ayarlar: kanal=%d adres_genisligi=%d payload=%d crc=%d veri_hizi=1Mbps auto_ack=1 dinamik_payload=0\n",
+      radio.getChannel(), 5, radio.getPayloadSize(), (int)radio.getCRCLength());
 
   lastHelloSentAt = millis();
   sendHello();

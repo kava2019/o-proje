@@ -64,10 +64,36 @@ class NRF24Radio:
         spi = board.SPI()
 
         nrf = RF24(spi, csn, ce)
+
+        # circuitpython-nrf24l01 ve ESP32'deki RF24 (TMRh20) kütüphanesinin
+        # varsayılanları birbirinden farklı (ör. bu kütüphane dinamik payload'u
+        # varsayılan AÇIK tutar, TMRh20 varsayılan KAPALI tutar). Varsayılana
+        # güvenmek iki tarafın birbirini hiç duymamasına yol açtı - bu yüzden
+        # her ayar burada AÇIKÇA set ediliyor, esp32-node.ino'daki karşılığıyla
+        # birebir eşleşmeli.
+        nrf.address_length = 5
         nrf.channel = rf_channel
+        nrf.dynamic_payloads = False
+        nrf.payload_length = 12
+        nrf.crc = 2
+        nrf.data_rate = 1
+        nrf.auto_ack = True
+
         nrf.open_tx_pipe(_COMMON_ADDRESS)
         nrf.open_rx_pipe(1, _COMMON_ADDRESS)
         nrf.listen = True
+
+        logger.info(
+            "nRF24 ayarları: kanal=%d adres_genisligi=%d payload=%d crc=%d "
+            "veri_hizi=%dMbps auto_ack=%s dinamik_payload=%s",
+            nrf.channel,
+            nrf.address_length,
+            nrf.payload_length,
+            nrf.crc,
+            nrf.data_rate,
+            bool(nrf.auto_ack),
+            bool(nrf.dynamic_payloads),
+        )
         return nrf
 
     def send(self, payload: bytes) -> bool:
