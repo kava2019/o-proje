@@ -14,7 +14,7 @@
 #define NETWORK_ID          1            // pi-gateway/config.json .network_id ile AYNI olmali
 #define RF_CHANNEL          76           // pi-gateway/config.json .rf_channel ile AYNI olmali
 #define RELAY_PIN           26           // rolenin bagli oldugu GPIO
-#define RELAY_ACTIVE_LEVEL  LOW          // role karti aktif-LOW ise LOW, aktif-HIGH ise HIGH
+#define RELAY_ACTIVE_LEVEL  HIGH          // role karti aktif-LOW ise LOW, aktif-HIGH ise HIGH
 #define DEVICE_TYPE_VALUE   DEVICE_LIGHT // DEVICE_PLUG ya da DEVICE_LIGHT (protocol.h)
 #define PIN_CE              4           // nRF24 CE
 #define PIN_CSN             5           // nRF24 CSN (SPI chip-select)
